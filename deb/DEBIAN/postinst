@@ -1,10 +1,41 @@
 #!/bin/sh
+
 set -e
-# Automatically added by dh_installinit/11.3.5
-if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-deconfigure" ] || [ "$1" = "abort-remove" ] ; then
-	if [ -x "/etc/init.d/squeezelite" ]; then
-		update-rc.d squeezelite defaults >/dev/null
-		invoke-rc.d squeezelite start || exit 1
-	fi
+
+umask 0022
+ACTION="$1"
+VERSION="$2"
+
+if [ "$ACTION" = "configure" ]; then
+    # add the squeezelite user
+    if ! getent passwd squeezelite >/dev/null; then
+        adduser --quiet --ingroup audio --system --no-create-home --shell /usr/sbin/nologin squeezelite
+    fi
 fi
-# End automatically added section
+
+if [ "$ACTION" = "configure" ] || [ "$ACTION" = "abort-upgrade" ] || [ "$ACTION" = "abort-deconfigure" ] || [ "$ACTION" = "abort-remove" ] ; then
+        if [ -d /run/systemd/system ]; then
+		systemctl --system daemon-reload >/dev/null || true
+
+               	# This will only remove masks created by d-s-h on package removal.
+		deb-systemd-helper unmask 'squeezelite.service' >/dev/null || true
+
+	        # was-enabled defaults to true, so new installations run enable.
+        	if deb-systemd-helper --quiet was-enabled 'squeezelite.service' ; then
+                	# Enables the unit on first installation, creates new
+	                # symlinks on upgrades if the unit file has changed.
+	                deb-systemd-helper enable 'squeezelite.service' >/dev/null || true
+	        else
+	                # Update the statefile to add new symlinks (if any), which need to be
+	                # cleaned up on purge. Also remove old symlinks.
+	                deb-systemd-helper update-state 'squeezelite.service' >/dev/null || true
+	        fi
+
+                if [ -n "$VERSION" ]; then
+                        _dh_action=restart
+                else
+                        _dh_action=start
+                fi
+                deb-systemd-invoke $_dh_action 'squeezelite.service' >/dev/null || true
+        fi
+fi

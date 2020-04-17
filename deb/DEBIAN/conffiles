@@ -1,2 +1,1 @@
-/etc/default/squeezelite
-/etc/init.d/squeezelite
+/lib/systemd/system/squeezelite.service
