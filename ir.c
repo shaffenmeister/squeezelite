@@ -1,14 +1,14 @@
-/* 
+/*
  *  Squeezelite - lightweight headless squeezebox emulator
  *
  *  (c) Adrian Smith 2012-2015, triode1@btinternet.com
  *      Ralph Irving 2015-2017, ralph_irving@hotmail.com
- *  
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -106,6 +106,10 @@ static struct {
 	{ "KEY_REWIND",     0x7689c03f, true  },
 	{ "KEY_NEXT",       0x7689a05f, true  },
 	{ "KEY_FORWARD",    0x7689a05f, true  },
+	{ "KEY_PREVIOUS",   0x7689c03f, false },
+	{ "KEY_REWIND",     0x7689c03f, false },
+	{ "KEY_NEXT",       0x7689a05f, false },
+	{ "KEY_FORWARD",    0x7689a05f, false },
 	{ "KEY_PAUSE",      0x768920df, true  },
 	{ "KEY_PLAY",       0x768910ef, false },
 	{ "KEY_POWER",      0x768940bf, false },
@@ -135,7 +139,7 @@ static struct {
 	{ "KEY_MEDIA_REPEAT", 0x768938c7, false },
 //	{ "KEY_TITLE",      0x76897887, false }, // Now Playing
 //	{ "KEY_TITLE",      0x7689a25d, false }, // Now Playing
-//	{ "KEY_TEXT",       0x7689f807, false }, // Size 
+//	{ "KEY_TEXT",       0x7689f807, false }, // Size
 //	{ "KEY_BRIGHTNESS_CYCLE", 0x768904fb, false },
 	{ NULL,             0         , false },
 };
@@ -153,8 +157,12 @@ static u32_t ir_cmd_map(const char *c) {
 static u32_t ir_key_map(const char *c, const char *r) {
 	int i;
 	for (i = 0; keymap[i].lirc; i++) {
+		LOG_DEBUG("ir_key_map: c=>>%s<< r=>>%s<< lirc key=>>%s<<",c,r,keymap[i].lirc);
 		if (!strcmp(c, keymap[i].lirc)) {
 			// inputlirc issues "0", while LIRC uses "00"
+			LOG_DEBUG("key %s found (repeat: %d)",c,keymap[i].repeat);
+
+			// Make compatible with inputlirc
 			if (keymap[i].repeat || !strcmp(r, "0") || !strcmp(r,"00")) {
 				return keymap[i].code;
 			}
@@ -167,20 +175,22 @@ static u32_t ir_key_map(const char *c, const char *r) {
 
 static void *ir_thread() {
 	char *code;
-	
+
 	while (fd > 0 && LIRC(i, nextcode, &code) == 0) {
-		
+
 		u32_t now = gettime_ms();
 		u32_t ir_code = 0;
-		
+
 		if (code == NULL) continue;
-		
+
 		if (config) {
 			// allow lirc_client to decode then lookup cmd in our table
 			// we can only send one IR event to slimproto so break after first one
 			char *c;
 			while (LIRC(i, code2char, config, code, &c) == 0 && c != NULL) {
 				ir_code = ir_cmd_map(c);
+				LOG_DEBUG("ir cmd: analysing %s %x", c, ir_code);
+
 				if (ir_code) {
 					LOG_DEBUG("ir cmd: %s -> %x", c, ir_code);
 				}
@@ -191,9 +201,12 @@ static void *ir_thread() {
 			// try to match on lirc button name if it is from the standard namespace
 			// this allows use of non slim remotes without a specific entry in .lircrc
 			char *b, *r;
+			LOG_DEBUG("ir lirc standard code: >>%s<<", code);
+
 			strtok(code, " \n");     // discard
 			r = strtok(NULL, " \n"); // repeat count
 			b = strtok(NULL, " \n"); // key name
+			LOG_DEBUG("ir lirc standard code: >>r=%s b=%s<<", r,b);
 			if (r && b) {
 				ir_code = ir_key_map(b, r);
 				LOG_DEBUG("ir lirc: %s [%s] -> %x", b, r, ir_code);
@@ -210,10 +223,10 @@ static void *ir_thread() {
 			UNLOCK_I;
 			wake_controller();
 		}
-		
+
 		free(code);
 	}
-	
+
 	return 0;
 }
 
@@ -262,7 +275,7 @@ void ir_init(log_level level, char *lircrc) {
 		}
 		else {
 			LOG_DEBUG("loaded lircrc config: %s", lircrc);
-		}	
+		}
 
 		mutex_create(ir.mutex);
 

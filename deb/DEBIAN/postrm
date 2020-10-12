@@ -1,0 +1,52 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "purge" ]; then
+	# clean up all statoverrides that belonged to squeezelite, so the
+	# squeezelite system user can be removed cleanly
+	for i in $(dpkg-statoverride --list | awk '/^squeezelite / {print $4}'); do
+		if dpkg-statoverride --list --quiet "$i" >/dev/null; then
+			dpkg-statoverride --force --quiet --remove "$i"
+		fi
+	done
+
+        deluser --quiet --system squeezelite > /dev/null || true
+
+	rm -rf /var/log/squeezelite.log > /dev/null 2>&1
+fi
+
+if [ "$1" = "purge" ] ; then
+        update-rc.d squeezelite remove >/dev/null
+fi
+
+if [ "$1" = "remove" ]; then
+        if [ -x "/usr/bin/deb-systemd-helper" ] ; then
+                deb-systemd-helper --user mask 'squeezelite.service' >/dev/null || true
+        fi
+fi
+
+if [ "$1" = "purge" ]; then
+        if [ -x "/usr/bin/deb-systemd-helper" ] ; then
+                deb-systemd-helper --user purge 'squeezelite.service' >/dev/null || true
+                deb-systemd-helper --user unmask 'squeezelite.service' >/dev/null || true
+        fi
+fi
+
+if [ -d /run/systemd/system ]; then
+        systemctl --system daemon-reload >/dev/null || true
+fi
+
+if [ "$1" = "remove" ]; then
+        if [ -x "/usr/bin/deb-systemd-helper" ]; then
+                deb-systemd-helper mask 'squeezelite.service' >/dev/null || true
+        fi
+fi
+
+if [ "$1" = "purge" ]; then
+        if [ -x "/usr/bin/deb-systemd-helper" ]; then
+                deb-systemd-helper purge 'squeezelite.service' >/dev/null || true
+                deb-systemd-helper unmask 'squeezelite.service' >/dev/null || true
+        fi
+fi
+
