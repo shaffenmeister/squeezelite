@@ -226,29 +226,29 @@ static void set_mixer(bool setmax, float ldB, float rdB) {
 	LOG_DEBUG("%s left: %3.1fdB -> %ld right: %3.1fdB -> %ld", alsa.volume_mixer_name, ldB, nleft, rdB, nright);
 }
 
-void set_volume(unsigned left, unsigned right) {
-	float ldB, rdB;
+//~ void set_volume(unsigned left, unsigned right) {
+	//~ float ldB, rdB;
 
-	if (!alsa.volume_mixer_name) {
-		LOG_DEBUG("setting internal gain left: %u right: %u", left, right);
-		LOCK;
-		output.gainL = left;
-		output.gainR = right;
-		UNLOCK;
-		return;
-	} else {
-		LOCK;
-		output.gainL = FIXED_ONE;
-		output.gainR = FIXED_ONE;
-		UNLOCK;
-	}
+	//~ if (!alsa.volume_mixer_name) {
+		//~ LOG_DEBUG("setting internal gain left: %u right: %u", left, right);
+		//~ LOCK;
+		//~ output.gainL = left;
+		//~ output.gainR = right;
+		//~ UNLOCK;
+		//~ return;
+	//~ } else {
+		//~ LOCK;
+		//~ output.gainL = FIXED_ONE;
+		//~ output.gainR = FIXED_ONE;
+		//~ UNLOCK;
+	//~ }
 
-	// convert 16.16 fixed point to dB
-	ldB = 20 * log10( left  / 65536.0F );
-	rdB = 20 * log10( right / 65536.0F );
+	//~ // convert 16.16 fixed point to dB
+	//~ ldB = 20 * log10( left  / 65536.0F );
+	//~ rdB = 20 * log10( right / 65536.0F );
 
-	set_mixer(false, ldB, rdB);
-}
+	//~ set_mixer(false, ldB, rdB);
+//~ }
 
 static void *alsa_error_handler(const char *file, int line, const char *function, int err, const char *fmt, ...) {
 	va_list args;
