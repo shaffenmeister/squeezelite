@@ -4,6 +4,7 @@
 #include <math.h>
 
 #if ALSA
+static log_level loglevel=lDEBUG;
 
 extern log_level loglevel;
 static unsigned int last_idx = 0;
@@ -51,7 +52,6 @@ void biino_set_volume(unsigned left, unsigned right) {
 		last_idx = idx;
 		LOG_DEBUG("setting biino level: %u --> %f dB calc/%f dB idx", idx, ldB, dbTable[idx]);
 	}
-
 }
 
 #endif // ALSA
