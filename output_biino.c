@@ -1,25 +1,57 @@
 #include "squeezelite.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
 #if ALSA
 
-void set_volume(unsigned left, unsigned right) {
-	unsigned value;
-	
+extern log_level loglevel;
+static unsigned int last_idx = 0;
+
+static float dbTable[] = {0, -1.20961494762763, -2.41808240999854, -3.62769735762617, -4.76144323158942, -5.97105817921705, -7.17952564158796, -8.38914058921559, -9.49910385926309, -10.7087188068907, -11.9171862692616, -13.1268012168893, -14.2605470908525, -15.4701620384801, -16.6786295008511, -17.8882444484787, -18.9384311303316, -20.1480460779592, -21.3565135403301, -22.5661284879578, -23.699874361921, -24.9094893095487, -26.1179567719196, -27.3275717195472, -28.4375349895947, -29.6471499372223, -30.8556173995932, -32.0652323472209, -33.1989782211841, -34.4085931688117, -35.6170606311827, -36.8266755788103, -32.3957751657679, -33.6053901133955, -34.8138575757664, -36.0234725233941, -37.1572183973573, -38.3668333449849, -39.5753008073558, -40.7849157549835, -41.894879025031, -43.1044939726586, -44.3129614350295, -45.5225763826572, -46.6563222566204, -47.865937204248, -49.0744046666189, -50.2840196142466, -51.3342062960995, -52.5438212437271, -53.752288706098, -54.9619036537257, -56.0956495276889, -57.3052644753165, -58.5137319376875, -59.7233468853151, -60.8333101553626, -62.0429251029902, -63.2513925653611, -64.4610075129888, -65.594753386952, -66.8043683345796, -68.0128357969505, -69.2224507445782};
+
+void biino_set_volume(unsigned left, unsigned right) {
+	unsigned int setval;
+	float ldB;
+	int idx;
+	char buffer[128];
+
 	if( left == 0 || right == 0 ) {
-		value = 0;
+		setval = 0;
+		idx = 63;
+		ldB = dbTable[idx];
 	}
 	else
-	if( left >= 65535 || right >= 65535) {
-		value = 100;
+	if( left >= 65536 || right >= 65536) {
+		setval = 65536;
+		idx = 0;
+		ldB = dbTable[idx];
 	}
 	else {
-		value = 50;
+		if( left <= right ) {
+			setval = left;
+		} else {
+			setval = right;
+		}
+
+		// convert 16.16 fixed point to dB
+		ldB = 20 * log10( (float)setval / 65536.0F );
+
+		for( idx=63; idx >= 0; idx-- ) {
+			if( ldB <= dbTable[idx] ) {
+				idx = 63 - idx;
+				break;
+			}
+		}
 	}
 
-	printf("setting biino level: %u", value);
-	// convert 16.16 fixed point to dB
-	//~ ldB = 20 * log10( left  / 65536.0F );
-	//~ rdB = 20 * log10( right / 65536.0F );
+	if( idx != last_idx ) {
+		snprintf(buffer, 128, "/usr/local/bin/biinosetvol gpiochip3 %u", idx);
+		system(buffer);
+		last_idx = idx;
+		LOG_DEBUG("setting biino level: %u --> %f dB calc/%f dB idx", idx, ldB, dbTable[idx]);
+	}
+
 }
 
 #endif // ALSA
