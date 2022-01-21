@@ -181,7 +181,7 @@ void list_mixers(const char *output_device) {
 static void set_mixer(bool setmax, float ldB, float rdB) {
 	int err;
 	long nleft, nright;
-	
+
 	if (alsa.mixer_linear) {
         long lraw, rraw;
         if (setmax) {
@@ -226,29 +226,36 @@ static void set_mixer(bool setmax, float ldB, float rdB) {
 	LOG_DEBUG("%s left: %3.1fdB -> %ld right: %3.1fdB -> %ld", alsa.volume_mixer_name, ldB, nleft, rdB, nright);
 }
 
-//~ void set_volume(unsigned left, unsigned right) {
-	//~ float ldB, rdB;
+void set_volume(unsigned left, unsigned right) {
+	float ldB, rdB;
 
-	//~ if (!alsa.volume_mixer_name) {
-		//~ LOG_DEBUG("setting internal gain left: %u right: %u", left, right);
-		//~ LOCK;
-		//~ output.gainL = left;
-		//~ output.gainR = right;
-		//~ UNLOCK;
-		//~ return;
-	//~ } else {
-		//~ LOCK;
-		//~ output.gainL = FIXED_ONE;
-		//~ output.gainR = FIXED_ONE;
-		//~ UNLOCK;
-	//~ }
+	if (!alsa.volume_mixer_name) {
+		LOG_DEBUG("setting internal gain left: %u right: %u", left, right);
+		LOCK;
+		output.gainL = left;
+		output.gainR = right;
+		UNLOCK;
+		return;
+	} else {
+		LOCK;
+		output.gainL = FIXED_ONE;
+		output.gainR = FIXED_ONE;
+		UNLOCK;
+	}
 
-	//~ // convert 16.16 fixed point to dB
-	//~ ldB = 20 * log10( left  / 65536.0F );
-	//~ rdB = 20 * log10( right / 65536.0F );
+	// convert 16.16 fixed point to dB
+	ldB = 20 * log10( left  / 65536.0F );
+	rdB = 20 * log10( right / 65536.0F );
 
-	//~ set_mixer(false, ldB, rdB);
-//~ }
+	// set_mixer(false, ldB, rdB);
+	if( left >= 65536 || right >= 65536 )
+		set_mixer(true, 0.0F, 0.0F);
+	else
+	if( left <= 10 || right <= 10 )
+		set_mixer(false, ldB, rdB);
+
+	biino_set_volume(left, right);
+}
 
 static void *alsa_error_handler(const char *file, int line, const char *function, int err, const char *fmt, ...) {
 	va_list args;
@@ -296,6 +303,9 @@ bool test_open(const char *device, unsigned rates[], bool userdef_rates) {
 		for (i = 0, ind = 0; ref[i]; ++i) {
 			if (snd_pcm_hw_params_test_rate(pcm, hw_params, ref[i], 0) == 0) {
 				rates[ind++] = ref[i];
+			}
+			else {
+				LOG_DEBUG("sample rate %u not supported", ref[i]);
 			}
 		}
 	}

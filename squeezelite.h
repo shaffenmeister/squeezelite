@@ -26,7 +26,7 @@
 
 #define MAJOR_VERSION "1.9"
 #define MINOR_VERSION "9"
-#define MICRO_VERSION "1384"
+#define MICRO_VERSION "1392"
 
 #if defined(CUSTOM_VERSION)
 #define VERSION "v" MAJOR_VERSION "." MINOR_VERSION "-" MICRO_VERSION STR(CUSTOM_VERSION)
@@ -617,8 +617,8 @@ typedef enum { FADE_NONE = 0, FADE_CROSSFADE, FADE_IN, FADE_OUT, FADE_INOUT } fa
 
 #define MONO_RIGHT	0x02
 #define MONO_LEFT	0x01
-#define MAX_SUPPORTED_SAMPLERATES 18
-#define TEST_RATES = { 768000, 705600, 384000, 352800, 192000, 176400, 96000, 88200, 48000, 44100, 32000, 24000, 22500, 16000, 12000, 11025, 8000, 0 }
+#define MAX_SUPPORTED_SAMPLERATES 20
+#define TEST_RATES = { 1536000, 1411200, 768000, 705600, 384000, 352800, 192000, 176400, 96000, 88200, 48000, 44100, 32000, 24000, 22500, 16000, 12000, 11025, 8000, 0 }
 
 struct outputstate {
 	output_state state;
@@ -689,6 +689,7 @@ void _checkfade(bool);
 void list_devices(void);
 void list_mixers(const char *output_device);
 void set_volume(unsigned left, unsigned right);
+void biino_set_volume(unsigned left, unsigned right);
 bool test_open(const char *device, unsigned rates[], bool userdef_rates);
 void output_init_alsa(log_level level, const char *device, unsigned output_buf_size, char *params, unsigned rates[], unsigned rate_delay, unsigned rt_priority, unsigned idle, char *mixer_device, char *volume_mixer, bool mixer_unmute, bool mixer_linear);
 void output_close_alsa(void);
