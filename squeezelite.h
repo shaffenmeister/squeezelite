@@ -26,7 +26,11 @@
 
 #define MAJOR_VERSION "2.0"
 #define MINOR_VERSION "0"
+<<<<<<< HEAD
 #define MICRO_VERSION "1504"
+=======
+#define MICRO_VERSION "1507"
+>>>>>>> irving_master/master
 
 #if defined(CUSTOM_VERSION)
 #define VERSION "v" MAJOR_VERSION "." MINOR_VERSION "-" MICRO_VERSION STR(CUSTOM_VERSION)

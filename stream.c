@@ -510,7 +510,11 @@ static void stream_ogg(size_t n) {
 }
 #endif
 
+<<<<<<< HEAD
 static void *stream_thread() {
+=======
+static void *stream_thread(void *vargp) {
+>>>>>>> irving_master/master
 	while (running) {
 
 		struct pollfd pollinfo;
