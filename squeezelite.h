@@ -26,7 +26,7 @@
 
 #define MAJOR_VERSION "2.0"
 #define MINOR_VERSION "0"
-#define MICRO_VERSION "1540"
+#define MICRO_VERSION "1541"
 
 #if defined(CUSTOM_VERSION)
 #define VERSION MAJOR_VERSION "." MINOR_VERSION "-" MICRO_VERSION STR(CUSTOM_VERSION)
@@ -61,7 +61,7 @@
 #define WIN       1
 #define PORTAUDIO 1
 #define FREEBSD   0
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
 #define LINUX     0
 #define OSX       0
 #define WIN       0
@@ -299,6 +299,9 @@
 #include <dlfcn.h>
 #include <pthread.h>
 #include <signal.h>
+#if FREEBSD
+#include <stdint.h>
+#endif /* FREEBSD */
 #if SUN
 #include <ctype.h>
 #include <sys/types.h>
